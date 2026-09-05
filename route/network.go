@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -61,10 +62,11 @@ type NetworkManager struct {
 	environmentUpdateTimer   *time.Timer
 	interfaceUpdateAccess    sync.Mutex
 	interfaceUpdateCancel    context.CancelFunc
+	interfaceUpdateDone      chan struct{}
 	interfaceUpdateRunAccess sync.Mutex
 	powerUpdateAccess        sync.Mutex
 	powerUpdateCancel        context.CancelFunc
-	started                  bool
+	started                  atomic.Bool
 }
 
 func NewNetworkManager(ctx context.Context, logger logger.ContextLogger, options option.RouteOptions, dnsOptions option.DNSOptions) (*NetworkManager, error) {
@@ -217,7 +219,7 @@ func (r *NetworkManager) Start(stage adapter.StartStage) error {
 				}
 			}
 		}
-		r.started = true
+		return r.waitInitialInterfaceUpdate()
 	}
 	return nil
 }
@@ -517,17 +519,46 @@ func (r *NetworkManager) notifyInterfaceUpdate(defaultInterface *control.Interfa
 	}
 	r.pauseManager.NetworkWake()
 	updateContext, updateCancel := context.WithCancel(r.ctx)
+	updateDone := make(chan struct{})
 	r.interfaceUpdateAccess.Lock()
 	previousCancel := r.interfaceUpdateCancel
 	r.interfaceUpdateCancel = updateCancel
+	r.interfaceUpdateDone = updateDone
 	r.interfaceUpdateAccess.Unlock()
 	if previousCancel != nil {
 		previousCancel()
 	}
 	go func() {
+		defer close(updateDone)
 		defer updateCancel()
 		r.updateInterface(updateContext, defaultInterface)
 	}()
+}
+
+// 首次接口通知可能异步完成；启动前等待它，避免把初始化误判为网络切换。
+func (r *NetworkManager) waitInitialInterfaceUpdate() error {
+	for {
+		r.interfaceUpdateAccess.Lock()
+		done := r.interfaceUpdateDone
+		if done == nil {
+			r.started.Store(true)
+			r.interfaceUpdateAccess.Unlock()
+			return nil
+		}
+		r.interfaceUpdateAccess.Unlock()
+		select {
+		case <-done:
+		case <-r.ctx.Done():
+			return r.ctx.Err()
+		}
+		r.interfaceUpdateAccess.Lock()
+		if r.interfaceUpdateDone == done {
+			r.started.Store(true)
+			r.interfaceUpdateAccess.Unlock()
+			return nil
+		}
+		r.interfaceUpdateAccess.Unlock()
+	}
 }
 
 func (r *NetworkManager) updateInterface(ctx context.Context, defaultInterface *control.Interface) {
@@ -571,7 +602,7 @@ func (r *NetworkManager) updateInterface(ctx context.Context, defaultInterface *
 	if ctx.Err() != nil {
 		return
 	}
-	if !r.started {
+	if !r.started.Load() {
 		return
 	}
 	r.ResetNetwork(ctx)

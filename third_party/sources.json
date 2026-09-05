@@ -1,0 +1,307 @@
+[
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "chunk_aead.go",
+    "sha256": "3fc8f03d391ce7f2ad1ee5f2b103d1a52171862c24997492a97415d1f994ba1f"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "chunk_length_aead.go",
+    "sha256": "c106029ba6bb0a304713b7a7b66b27e792e3717ff114f8963e993b6d0bf18e66"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "chunk_length_stream.go",
+    "sha256": "de6d2412041e7e75af8a995532dc71fcb0222ae87c080fb121a613411211432a"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "chunk_stream.go",
+    "sha256": "1bd41234e826e7d55cd175e6da0a3010e5d3f0118fcf5e39e31aebb76ba31223"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "chunk_stream_checksum.go",
+    "sha256": "1be91d425da231a8a4cb71ab9cdb69fc3d04f1d227071ea882113b8d3d2ff031"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "client.go",
+    "sha256": "747a93608f091221114552309d0388b53c6b0aa30219d51ff82c60ec3e7f8218"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "client_option.go",
+    "sha256": "628ead967d72de587034a7129c9b38bfdb1940a1b240f905ba754758bfeb5033"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "kdf.go",
+    "sha256": "9703b679a50e609223ac46c15723eea987e1188e370dcce1ecd237d597c1be2a"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "mux.go",
+    "sha256": "7061ce5af54ea04c212fb9184733a0f80d7bbcd541d25d097df2611bd02d4e9c"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "mux_wrapper.go",
+    "sha256": "bfb94507941940e19c8b232b00a535dcf07c313e3a4f84059eb37565791cf25b"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "protocol.go",
+    "sha256": "d2d41075d1f1d4e5e3206395d877138bc665b09a39c1fab42670fee45fae9224"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "service.go",
+    "sha256": "acd0471fcbc1f2aab0e3b6cdece0d0608a16b8463eee1fdc718cdc76e03ef5ca"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "service_option.go",
+    "sha256": "4f4508e8f50842c9df55c95a76dc4bdbf11f0014ae59cdb2f43ff59a61b72b59"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "xudp.go",
+    "sha256": "11497d190defff25ed8fcc8a5d8123cd9fcb1cfbce07d068664164468d118cfa"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "vless/client.go",
+    "sha256": "51a99417d9d93f58e66f7b79eca3cb3f3242cd68b35ca86efc14a3c10f40c5ea"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "vless/constant.go",
+    "sha256": "64517f068c6f54cab70c857890cc2cfd4ce1386e3ef5963efdb4081343e58316"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "vless/protocol.go",
+    "sha256": "dbf70def9e368cef3d1aeaba9186a6c862697eebac71f3e47ca405695da03304"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "vless/service.go",
+    "sha256": "2e3a18878ac06cbfc0ec2b7a65876ede9ffe4358affd95fd4fc833a46fa28a80"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "vless/vision.go",
+    "sha256": "15d46cbec83d0408487d64f762f5e41b6032da0246e0f3510396289a689034d9"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "vless/vision_utls.go",
+    "sha256": "23747cbe4fb6887a20d32f23bd7d4768a12d8d6a2bc4165a50885e3351d35545"
+  },
+  {
+    "module": "github.com/sagernet/sing-vmess@v0.2.8-0.20250909125414-3aed155119a1",
+    "file": "LICENSE",
+    "sha256": "2f02b7486bcfa90d115c71a20437f3906b6fd5bef81c5dc0efd341399e89d0fd"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead/aead.go",
+    "sha256": "d7a37769c28cb0ef4d03ee104f8d6e834af56e5dc3ee573ce5f694b9739ae082"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead/protocol.go",
+    "sha256": "c177711b439ab33416651e8e039ff21affd6954d27d2e0a6cd3726936201cfc8"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead/service.go",
+    "sha256": "f6f0a46f04d21c4e62b1e5289140af3766b4cf026b8e73f1f6fed20425972924"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead/service_multi.go",
+    "sha256": "5173c5a663d11395ce9a50c69153a53b47640bddde11bb43906e5714debbf12c"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/protocol.go",
+    "sha256": "d7e7f40a4485ef7fe32508ac261b382162f27cfc7c2150f776192cef53857b3f"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/relay.go",
+    "sha256": "858e9a9e8f64ebe57e09a96c794852b33c3da70e35f7dacc17922dc941437d55"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/service.go",
+    "sha256": "1e8a23112b31e59a0af5e6e68f1c2581464dd5a8db4734dd939744b63dfc35b8"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/service_multi.go",
+    "sha256": "bcfe41fb547eb6eedc15d53e4de564bc4055c9bfe0419e3d98cbbffb26cbc0b2"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/slidingwindow.go",
+    "sha256": "5b594d3bea9e12cd7071d089531206041f8801b1e0307481c6755b591a8828da"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/xor.go",
+    "sha256": "6886e10e9e9400d6c79069256807eee83b4fd498e98c8d8c4453a3b92eb6e967"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "shadowaead_2022/xor_go119.go",
+    "sha256": "68a311eaa801d9702d6fc517254825bd21e38d99c5531cd4a4be54ed1dc421ff"
+  },
+  {
+    "module": "github.com/sagernet/sing-shadowsocks@v0.2.8",
+    "file": "LICENSE",
+    "sha256": "2f02b7486bcfa90d115c71a20437f3906b6fd5bef81c5dc0efd341399e89d0fd"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/address.go",
+    "sha256": "e6ccf63311b791f2291cf533c10b3bf8fabdb911f33efae1b681516c0590041d"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/congestion.go",
+    "sha256": "3a66c8d6638a02d3a86f83a590c71d5ba31e19090af729ff36667bde876645dd"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/packet.go",
+    "sha256": "fa94a2bc768ccfccd4eb48c7226c961931d5686bf6863e59d77cdf72a6820a8c"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/packet_wait.go",
+    "sha256": "f2c1052f0808c20218727a74196cf0eb785fde111de794f98c8b7b0a0b0c8440"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/protocol.go",
+    "sha256": "19d2613c78a9884d7c5823b8e9912c8aaf16479670e7be0f20c4d2369a0fda00"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/service.go",
+    "sha256": "1b66f7e3c6a787f9468c0b687fd257b0b2dafc6386b3567f20121b00388c8f87"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "tuic/service_packet.go",
+    "sha256": "6381f8b22bde5fa930e0876fcb28825d3f13f9e62265f3a9a17449ffff490bc1"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/gecko.go",
+    "sha256": "500f3b2204a384eb2b93ce4991f2b25b68c11827147eea549e148b0a55255952"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/packet.go",
+    "sha256": "c2e976b9d8fdb0d7977b0c86fcbae9b9f4e4bcf23e414955bf5126fdcd99f2b5"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/packet_wait.go",
+    "sha256": "324477a112fc579e7878a2b5928752964274be1d387ae2732f00ac3de3323ea6"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/salamander.go",
+    "sha256": "6d2fb23bde2b544923d47ca51a7b486d1bf49ca4d4af2f5555eec4924e2a07ff"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/service.go",
+    "sha256": "a71a570f04a5cc077c8a6dc5f838ad67df718998f837ae13e4e8a98d5db995e7"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/service_packet.go",
+    "sha256": "c03e0a575af90adad3c597a6cbfee7a92ed8046ec7cf30341642e84c6cfe574a"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/internal/protocol/http.go",
+    "sha256": "c3ca34963c3d207f5e759e8b4f267267b49ade3808f464c6368bb580d6667505"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/internal/protocol/padding.go",
+    "sha256": "ca93d4b0e173df3fa1a422655fa98e8af5160c8c592f6eaf7f8e530d78387908"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "hysteria2/internal/protocol/proxy.go",
+    "sha256": "80c5f6db6055522c1fa78baf6204aae76a0f6ff2d4bfebda205c19463438e173"
+  },
+  {
+    "module": "github.com/sagernet/sing-quic@v0.7.0-beta.4",
+    "file": "LICENSE",
+    "sha256": "2f02b7486bcfa90d115c71a20437f3906b6fd5bef81c5dc0efd341399e89d0fd"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/metadata.go",
+    "sha256": "a88fce11940acf4ec7f14cb5ec601bef1d6bfc650da1072da5711c6af9957366"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/mux.go",
+    "sha256": "8ee6e58d739495703ce78f69430a5c7db84007181f53fdbed51c8c9936c8f112"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/padding.go",
+    "sha256": "594a0acff38176568ca4e32fd50f56adc956b86d2dc9874adb73a7c962e5ad2b"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/scheduler.go",
+    "sha256": "e85e3295f8d5b7e693d0f3949e9dfc65e25bdf29e84bf4b985f92a8b131cd7dc"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/segment.go",
+    "sha256": "c1455cb89b7aac82d10b8359528dc4cb0c659dc45c3bb4b8511830b9f326ce7f"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/session.go",
+    "sha256": "5589b0e0420633305828561a3ca8f97e31daf5bb0bb888d47d0141c1f379850d"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/underlay.go",
+    "sha256": "64f197b8266dd9f023c7d98f24cc3f5f0d9f68d95bc5f91146d4a7cf8bd14458"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/underlay_base.go",
+    "sha256": "281636fc059bbd86c929e1e5edd4665d78a5d450b9b2491d39d93005430bba97"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/underlay_packet.go",
+    "sha256": "c259867348992ff4d710e02a3b887a8b3ea7f202632680f14613cd4c69e3be84"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "pkg/protocol/underlay_stream.go",
+    "sha256": "529e752e1c8d47ffc579bca422b303b863c0cebdeac24e26e7f969ec694b840e"
+  },
+  {
+    "module": "github.com/enfein/mieru/v3@v3.29.0",
+    "file": "LICENSE",
+    "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+  }
+]

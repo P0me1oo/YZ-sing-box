@@ -8,12 +8,14 @@ import (
 type SocksInboundOptions struct {
 	ListenOptions
 	Users          []auth.User           `json:"users,omitempty"`
+	RequireAuth    bool                  `json:"require_auth,omitempty"`
 	DomainResolver *DomainResolveOptions `json:"domain_resolver,omitempty"`
 }
 
 type HTTPMixedInboundOptions struct {
 	ListenOptions
 	Users          []auth.User           `json:"users,omitempty"`
+	RequireAuth    bool                  `json:"require_auth,omitempty"`
 	DomainResolver *DomainResolveOptions `json:"domain_resolver,omitempty"`
 	SetSystemProxy bool                  `json:"set_system_proxy,omitempty"`
 	InboundTLSOptionsContainer

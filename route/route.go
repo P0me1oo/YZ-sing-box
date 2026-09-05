@@ -105,6 +105,14 @@ func (r *Router) routeConnection(ctx context.Context, conn net.Conn, metadata ad
 	if deadline.NeedAdditionalReadDeadline(conn) {
 		conn = deadline.NewConn(conn)
 	}
+	// 规则选择和统计器读取完成后释放锁，不覆盖转交和 DNS 会话的生命周期。
+	r.rulesAccess.RLock()
+	rulesLocked := true
+	defer func() {
+		if rulesLocked {
+			r.rulesAccess.RUnlock()
+		}
+	}()
 	selectedRule, _, buffers, _, err := r.matchRule(ctx, &metadata, conn, nil)
 	if err != nil {
 		return err
@@ -144,6 +152,8 @@ func (r *Router) routeConnection(ctx context.Context, conn net.Conn, metadata ad
 			}
 			return action.Error(ctx)
 		case *R.RuleActionHijackDNS:
+			r.rulesAccess.RUnlock()
+			rulesLocked = false
 			for _, buffer := range buffers {
 				conn = bufio.NewCachedConn(conn, buffer)
 			}
@@ -170,6 +180,8 @@ func (r *Router) routeConnection(ctx context.Context, conn net.Conn, metadata ad
 	for _, tracker := range r.trackers {
 		conn = tracker.RoutedConnection(ctx, conn, metadata, selectedRule, selectedOutbound)
 	}
+	r.rulesAccess.RUnlock()
+	rulesLocked = false
 	if outboundHandler, isHandler := selectedOutbound.(adapter.ConnectionHandler); isHandler {
 		outboundHandler.NewConnection(ctx, conn, metadata, onClose)
 	} else {
@@ -240,6 +252,13 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 	if metadata.InboundType == C.TypeTun && metadata.Protocol == C.ProtocolDNS {
 		return r.hijackDNSPacket(ctx, conn, nil, metadata, onClose)
 	}
+	r.rulesAccess.RLock()
+	rulesLocked := true
+	defer func() {
+		if rulesLocked {
+			r.rulesAccess.RUnlock()
+		}
+	}()
 	selectedRule, _, _, packetBuffers, err := r.matchRule(ctx, &metadata, nil, conn)
 	if err != nil {
 		return err
@@ -280,6 +299,8 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 			}
 			return action.Error(ctx)
 		case *R.RuleActionHijackDNS:
+			r.rulesAccess.RUnlock()
+			rulesLocked = false
 			return r.hijackDNSPacket(ctx, conn, packetBuffers, metadata, onClose)
 		}
 	}
@@ -302,6 +323,8 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 	for _, tracker := range r.trackers {
 		conn = tracker.RoutedPacketConnection(ctx, conn, metadata, selectedRule, selectedOutbound)
 	}
+	r.rulesAccess.RUnlock()
+	rulesLocked = false
 	if metadata.FakeIP {
 		conn = newFakeIPNATPacketConn(bufio.NewNetPacketConn(conn), metadata.OriginDestination, metadata.Destination)
 	}
@@ -314,6 +337,8 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 }
 
 func (r *Router) PreMatch(metadata adapter.InboundContext, firstPacket []byte) adapter.PreMatchResult {
+	r.rulesAccess.RLock()
+	defer r.rulesAccess.RUnlock()
 	ctx := log.ContextWithNewID(r.ctx)
 	metadata.PreMatch = true
 	continueResult := adapter.PreMatchResult{Action: adapter.PreMatchContinue}

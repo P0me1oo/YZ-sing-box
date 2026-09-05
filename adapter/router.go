@@ -6,6 +6,7 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/sagernet/sing-box/option"
 	"github.com/sagernet/sing-tun"
 	"github.com/sagernet/sing-tun/gtcpip/header"
 	M "github.com/sagernet/sing/common/metadata"
@@ -28,6 +29,11 @@ type Router interface {
 	NeighborResolver() NeighborResolver
 	AppendTracker(tracker ConnectionTracker)
 	ResetNetwork()
+}
+
+// RuleUpdater 供嵌入式调用方更新路由，不改变上游 Router 的实现要求。
+type RuleUpdater interface {
+	UpdateRules(rules []option.Rule, ruleSets []option.RuleSet) error
 }
 
 type PreMatchAction uint8

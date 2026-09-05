@@ -54,6 +54,9 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 		authenticator: auth.NewAuthenticator(options.Users),
 		udpTimeout:    udpTimeout,
 	}
+	if options.RequireAuth && inbound.authenticator == nil {
+		inbound.authenticator = new(auth.Authenticator)
+	}
 	if options.TLS != nil {
 		tlsConfig, err := tls.NewServerWithOptions(tls.ServerOptions{
 			Context:        ctx,

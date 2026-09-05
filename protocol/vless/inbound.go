@@ -14,9 +14,9 @@ import (
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
+	"github.com/sagernet/sing-box/third_party/sing-vmess/vless"
 	"github.com/sagernet/sing-box/transport/v2ray"
 	"github.com/sagernet/sing-vmess/packetaddr"
-	"github.com/sagernet/sing-vmess/vless"
 	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/common/auth"
 	"github.com/sagernet/sing/common/bufio"
@@ -39,8 +39,7 @@ type Inbound struct {
 	router    adapter.ConnectionRouterEx
 	logger    logger.ContextLogger
 	listener  *listener.Listener
-	users     []option.VLESSUser
-	service   *vless.Service[int]
+	service   *vless.Service[userIdentity]
 	tlsConfig tls.ServerConfig
 	transport adapter.V2RayServerTransport
 }
@@ -51,19 +50,18 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 		ctx:     ctx,
 		router:  uot.NewRouter(router, logger),
 		logger:  logger,
-		users:   options.Users,
 	}
 	var err error
 	inbound.router, err = mux.NewRouterWithOptions(inbound.router, logger, common.PtrValueOrDefault(options.Multiplex))
 	if err != nil {
 		return nil, err
 	}
-	service := vless.NewService[int](logger, adapter.NewUpstreamContextHandler(inbound.newConnectionEx, inbound.newPacketConnectionEx))
-	service.UpdateUsers(common.MapIndexed(inbound.users, func(index int, _ option.VLESSUser) int {
-		return index
-	}), common.Map(inbound.users, func(it option.VLESSUser) string {
+	service := vless.NewService[userIdentity](logger, adapter.NewUpstreamContextHandler(inbound.newConnectionEx, inbound.newPacketConnectionEx))
+	service.UpdateUsers(common.MapIndexed(options.Users, func(index int, user option.VLESSUser) userIdentity {
+		return userIdentity{index: index, name: user.Name}
+	}), common.Map(options.Users, func(it option.VLESSUser) string {
 		return it.UUID
-	}), common.Map(inbound.users, func(it option.VLESSUser) string {
+	}), common.Map(options.Users, func(it option.VLESSUser) string {
 		return it.Flow
 	}))
 	inbound.service = service
@@ -167,14 +165,14 @@ func (h *Inbound) NewConnection(ctx context.Context, conn net.Conn, metadata ada
 func (h *Inbound) newConnectionEx(ctx context.Context, conn net.Conn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
 	metadata.Inbound = h.Tag()
 	metadata.InboundType = h.Type()
-	userIndex, loaded := auth.UserFromContext[int](ctx)
+	userIndex, loaded := auth.UserFromContext[userIdentity](ctx)
 	if !loaded {
 		N.CloseOnHandshakeFailure(conn, onClose, os.ErrInvalid)
 		return
 	}
-	user := h.users[userIndex].Name
+	user := userIndex.name
 	if user == "" {
-		user = F.ToString(userIndex)
+		user = F.ToString(userIndex.index)
 	} else {
 		metadata.User = user
 	}
@@ -185,14 +183,14 @@ func (h *Inbound) newConnectionEx(ctx context.Context, conn net.Conn, metadata a
 func (h *Inbound) newPacketConnectionEx(ctx context.Context, conn N.PacketConn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
 	metadata.Inbound = h.Tag()
 	metadata.InboundType = h.Type()
-	userIndex, loaded := auth.UserFromContext[int](ctx)
+	userIndex, loaded := auth.UserFromContext[userIdentity](ctx)
 	if !loaded {
 		N.CloseOnHandshakeFailure(conn, onClose, os.ErrInvalid)
 		return
 	}
-	user := h.users[userIndex].Name
+	user := userIndex.name
 	if user == "" {
-		user = F.ToString(userIndex)
+		user = F.ToString(userIndex.index)
 	} else {
 		metadata.User = user
 	}

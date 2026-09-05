@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"runtime"
+	"sync"
 	"time"
 
 	"github.com/sagernet/sing-box/adapter"
@@ -25,6 +26,12 @@ import (
 var _ adapter.Router = (*Router)(nil)
 
 type Router struct {
+	reloadAccess      sync.Mutex
+	rulesAccess       sync.RWMutex
+	ruleSetAccess     sync.RWMutex
+	ruleOptions       []option.Rule
+	ruleSetOptions    []option.RuleSet
+	closed            bool
 	ctx               context.Context
 	logger            log.ContextLogger
 	inbound           adapter.InboundManager
@@ -96,10 +103,17 @@ func (r *Router) Initialize(rules []option.Rule, ruleSets []option.RuleSet) erro
 			r.ruleSetMap[tag] = ruleSet
 		}
 	}
+	r.ruleOptions = rules
+	r.ruleSetOptions = ruleSets
 	return nil
 }
 
 func (r *Router) Start(stage adapter.StartStage) error {
+	r.reloadAccess.Lock()
+	defer r.reloadAccess.Unlock()
+	if r.closed {
+		return os.ErrClosed
+	}
 	monitor := taskmonitor.New(r.logger, C.StartTimeout)
 	switch stage {
 	case adapter.StartStateInitialize:
@@ -220,6 +234,14 @@ func (r *Router) Start(stage adapter.StartStage) error {
 }
 
 func (r *Router) Close() error {
+	r.reloadAccess.Lock()
+	defer r.reloadAccess.Unlock()
+	r.rulesAccess.Lock()
+	defer r.rulesAccess.Unlock()
+	if r.closed {
+		return nil
+	}
+	r.closed = true
 	monitor := taskmonitor.New(r.logger, C.StopTimeout)
 	var err error
 	if r.neighborResolver != nil {
@@ -261,12 +283,16 @@ func (r *Router) Close() error {
 }
 
 func (r *Router) RuleSet(tag string) (adapter.RuleSet, bool) {
+	r.ruleSetAccess.RLock()
+	defer r.ruleSetAccess.RUnlock()
 	ruleSet, loaded := r.ruleSetMap[tag]
 	return ruleSet, loaded
 }
 
 func (r *Router) Rules() []adapter.Rule {
-	return r.rules
+	r.rulesAccess.RLock()
+	defer r.rulesAccess.RUnlock()
+	return append([]adapter.Rule(nil), r.rules...)
 }
 
 func (r *Router) AppendTracker(tracker adapter.ConnectionTracker) {

@@ -14,9 +14,9 @@ import (
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
+	"github.com/sagernet/sing-box/third_party/sing-shadowsocks/shadowaead"
+	"github.com/sagernet/sing-box/third_party/sing-shadowsocks/shadowaead_2022"
 	"github.com/sagernet/sing-shadowsocks"
-	"github.com/sagernet/sing-shadowsocks/shadowaead"
-	"github.com/sagernet/sing-shadowsocks/shadowaead_2022"
 	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/common/auth"
 	"github.com/sagernet/sing/common/buf"
@@ -39,8 +39,7 @@ type MultiInbound struct {
 	router   adapter.ConnectionRouterEx
 	logger   logger.ContextLogger
 	listener *listener.Listener
-	service  shadowsocks.MultiService[int]
-	users    []option.ShadowsocksUser
+	service  shadowsocks.MultiService[userIdentity]
 	tracker  adapter.SSMTracker
 }
 
@@ -62,9 +61,9 @@ func newMultiInbound(ctx context.Context, router adapter.Router, logger log.Cont
 	} else {
 		udpTimeout = C.UDPTimeout
 	}
-	var service shadowsocks.MultiService[int]
+	var service shadowsocks.MultiService[userIdentity]
 	if common.Contains(shadowaead_2022.List, options.Method) {
-		service, err = shadowaead_2022.NewMultiServiceWithPassword[int](
+		service, err = shadowaead_2022.NewMultiServiceWithPassword[userIdentity](
 			options.Method,
 			options.Password,
 			int64(udpTimeout.Seconds()),
@@ -72,7 +71,7 @@ func newMultiInbound(ctx context.Context, router adapter.Router, logger log.Cont
 			ntp.TimeFuncFromContext(ctx),
 		)
 	} else if common.Contains(shadowaead.List, options.Method) {
-		service, err = shadowaead.NewMultiService[int](
+		service, err = shadowaead.NewMultiService[userIdentity](
 			options.Method,
 			int64(udpTimeout.Seconds()),
 			adapter.NewLegacyUpstreamHandler(adapter.InboundContext{}, inbound.newConnection, inbound.newPacketConnection, inbound),
@@ -84,8 +83,8 @@ func newMultiInbound(ctx context.Context, router adapter.Router, logger log.Cont
 		return nil, err
 	}
 	if len(options.Users) > 0 {
-		err = service.UpdateUsersWithPasswords(common.MapIndexed(options.Users, func(index int, user option.ShadowsocksUser) int {
-			return index
+		err = service.UpdateUsersWithPasswords(common.MapIndexed(options.Users, func(index int, user option.ShadowsocksUser) userIdentity {
+			return userIdentity{index: index, name: user.Name}
 		}), common.Map(options.Users, func(user option.ShadowsocksUser) string {
 			return user.Password
 		}))
@@ -94,7 +93,6 @@ func newMultiInbound(ctx context.Context, router adapter.Router, logger log.Cont
 		}
 	}
 	inbound.service = service
-	inbound.users = options.Users
 	inbound.listener = listener.New(listener.Options{
 		Context:                  ctx,
 		Logger:                   logger,
@@ -123,17 +121,12 @@ func (h *MultiInbound) SetTracker(tracker adapter.SSMTracker) {
 }
 
 func (h *MultiInbound) UpdateUsers(users []string, uPSKs []string) error {
-	err := h.service.UpdateUsersWithPasswords(common.MapIndexed(users, func(index int, user string) int {
-		return index
+	err := h.service.UpdateUsersWithPasswords(common.MapIndexed(users, func(index int, user string) userIdentity {
+		return userIdentity{index: index, name: user}
 	}), uPSKs)
 	if err != nil {
 		return err
 	}
-	h.users = common.Map(users, func(user string) option.ShadowsocksUser {
-		return option.ShadowsocksUser{
-			Name: user,
-		}
-	})
 	return nil
 }
 
@@ -159,13 +152,13 @@ func (h *MultiInbound) NewPacket(buffer *buf.Buffer, source M.Socksaddr) {
 }
 
 func (h *MultiInbound) newConnection(ctx context.Context, conn net.Conn, metadata adapter.InboundContext) error {
-	userIndex, loaded := auth.UserFromContext[int](ctx)
+	userIndex, loaded := auth.UserFromContext[userIdentity](ctx)
 	if !loaded {
 		return os.ErrInvalid
 	}
-	user := h.users[userIndex].Name
+	user := userIndex.name
 	if user == "" {
-		user = F.ToString(userIndex)
+		user = F.ToString(userIndex.index)
 	} else {
 		metadata.User = user
 	}
@@ -182,13 +175,13 @@ func (h *MultiInbound) newConnection(ctx context.Context, conn net.Conn, metadat
 }
 
 func (h *MultiInbound) newPacketConnection(ctx context.Context, conn N.PacketConn, metadata adapter.InboundContext) error {
-	userIndex, loaded := auth.UserFromContext[int](ctx)
+	userIndex, loaded := auth.UserFromContext[userIdentity](ctx)
 	if !loaded {
 		return os.ErrInvalid
 	}
-	user := h.users[userIndex].Name
+	user := userIndex.name
 	if user == "" {
-		user = F.ToString(userIndex)
+		user = F.ToString(userIndex.index)
 	} else {
 		metadata.User = user
 	}

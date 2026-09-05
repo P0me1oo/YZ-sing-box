@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"sync"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/inbound"
@@ -14,8 +15,8 @@ import (
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing-box/option"
+	"github.com/sagernet/sing-box/third_party/sing-vmess"
 	"github.com/sagernet/sing-box/transport/v2ray"
-	"github.com/sagernet/sing-vmess"
 	"github.com/sagernet/sing-vmess/packetaddr"
 	"github.com/sagernet/sing/common"
 	"github.com/sagernet/sing/common/auth"
@@ -36,14 +37,15 @@ var _ adapter.TCPInjectableInbound = (*Inbound)(nil)
 
 type Inbound struct {
 	inbound.Adapter
-	ctx       context.Context
-	router    adapter.ConnectionRouterEx
-	logger    logger.ContextLogger
-	listener  *listener.Listener
-	service   *vmess.Service[int]
-	users     []option.VMessUser
-	tlsConfig tls.ServerConfig
-	transport adapter.V2RayServerTransport
+	userAccess sync.Mutex
+	ctx        context.Context
+	router     adapter.ConnectionRouterEx
+	logger     logger.ContextLogger
+	listener   *listener.Listener
+	service    *vmess.Service[userIdentity]
+	users      []option.VMessUser
+	tlsConfig  tls.ServerConfig
+	transport  adapter.V2RayServerTransport
 }
 
 func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLogger, tag string, options option.VMessInboundOptions) (adapter.Inbound, error) {
@@ -66,10 +68,10 @@ func NewInbound(ctx context.Context, router adapter.Router, logger log.ContextLo
 	if options.Transport != nil && options.Transport.Type != "" {
 		serviceOptions = append(serviceOptions, vmess.ServiceWithDisableHeaderProtection())
 	}
-	service := vmess.NewService[int](adapter.NewUpstreamContextHandler(inbound.newConnectionEx, inbound.newPacketConnectionEx), serviceOptions...)
+	service := vmess.NewService[userIdentity](adapter.NewUpstreamContextHandler(inbound.newConnectionEx, inbound.newPacketConnectionEx), serviceOptions...)
 	inbound.service = service
-	err = service.UpdateUsers(common.MapIndexed(options.Users, func(index int, it option.VMessUser) int {
-		return index
+	err = service.UpdateUsers(common.MapIndexed(options.Users, func(index int, it option.VMessUser) userIdentity {
+		return userIdentity{index: index, name: it.Name}
 	}), common.Map(options.Users, func(it option.VMessUser) string {
 		return it.UUID
 	}), common.Map(options.Users, func(it option.VMessUser) int {
@@ -173,14 +175,14 @@ func (h *Inbound) NewConnection(ctx context.Context, conn net.Conn, metadata ada
 func (h *Inbound) newConnectionEx(ctx context.Context, conn net.Conn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
 	metadata.Inbound = h.Tag()
 	metadata.InboundType = h.Type()
-	userIndex, loaded := auth.UserFromContext[int](ctx)
+	userIndex, loaded := auth.UserFromContext[userIdentity](ctx)
 	if !loaded {
 		N.CloseOnHandshakeFailure(conn, onClose, os.ErrInvalid)
 		return
 	}
-	user := h.users[userIndex].Name
+	user := userIndex.name
 	if user == "" {
-		user = F.ToString(userIndex)
+		user = F.ToString(userIndex.index)
 	} else {
 		metadata.User = user
 	}
@@ -191,14 +193,14 @@ func (h *Inbound) newConnectionEx(ctx context.Context, conn net.Conn, metadata a
 func (h *Inbound) newPacketConnectionEx(ctx context.Context, conn N.PacketConn, metadata adapter.InboundContext, onClose N.CloseHandlerFunc) {
 	metadata.Inbound = h.Tag()
 	metadata.InboundType = h.Type()
-	userIndex, loaded := auth.UserFromContext[int](ctx)
+	userIndex, loaded := auth.UserFromContext[userIdentity](ctx)
 	if !loaded {
 		N.CloseOnHandshakeFailure(conn, onClose, os.ErrInvalid)
 		return
 	}
-	user := h.users[userIndex].Name
+	user := userIndex.name
 	if user == "" {
-		user = F.ToString(userIndex)
+		user = F.ToString(userIndex.index)
 	} else {
 		metadata.User = user
 	}
