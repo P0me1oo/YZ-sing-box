@@ -355,11 +355,8 @@ func (c *serverConn) WriteVectorised(buffers []*buf.Buffer) error {
 }
 
 func (c *serverConn) Close() error {
-	return common.Close(
-		c.Conn,
-		common.PtrOrNil(c.reader),
-		common.PtrOrNil(c.writer),
-	)
+	// 读写包装都指向同一连接，无需访问正在初始化的写入器。
+	return c.Conn.Close()
 }
 
 func (c *serverConn) NeedAdditionalReadDeadline() bool {

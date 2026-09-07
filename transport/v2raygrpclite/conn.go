@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/sagernet/sing/common"
@@ -28,6 +29,11 @@ type GunConn struct {
 	create        chan struct{}
 	err           error
 	readRemaining int
+	setupAccess   sync.Mutex
+	initialized   bool
+	closed        bool
+	closeOnce     sync.Once
+	closeErr      error
 }
 
 func newGunConn(reader io.Reader, writer io.Writer, flusher http.Flusher) *GunConn {
@@ -47,12 +53,21 @@ func newLateGunConn(writer io.Writer) *GunConn {
 }
 
 func (c *GunConn) setup(reader io.Reader, err error) {
+	c.setupAccess.Lock()
+	if c.closed {
+		c.setupAccess.Unlock()
+		// 连接可能先于响应完成而关闭，迟到的响应仍需释放。
+		_ = common.Close(reader)
+		return
+	}
 	if reader != nil {
 		c.rawReader = reader
 		c.reader = std_bufio.NewReader(reader)
 	}
 	c.err = err
+	c.initialized = true
 	close(c.create)
+	c.setupAccess.Unlock()
 }
 
 func (c *GunConn) Read(b []byte) (n int, err error) {
@@ -61,7 +76,8 @@ func (c *GunConn) Read(b []byte) (n int, err error) {
 }
 
 func (c *GunConn) read(b []byte) (n int, err error) {
-	if c.reader == nil {
+	// create 在构造后不再修改；先等待发布，再访问读取器和错误。
+	if c.create != nil {
 		<-c.create
 		if c.err != nil {
 			return 0, c.err
@@ -141,7 +157,19 @@ func (c *GunConn) FrontHeadroom() int {
 }
 
 func (c *GunConn) Close() error {
-	return common.Close(c.rawReader, c.writer)
+	c.closeOnce.Do(func() {
+		c.setupAccess.Lock()
+		c.closed = true
+		reader := c.rawReader
+		if c.create != nil && !c.initialized {
+			c.err = net.ErrClosed
+			c.initialized = true
+			close(c.create)
+		}
+		c.setupAccess.Unlock()
+		c.closeErr = common.Close(reader, c.writer)
+	})
+	return c.closeErr
 }
 
 func (c *GunConn) LocalAddr() net.Addr {

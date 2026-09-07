@@ -5,7 +5,7 @@
 | 目录 | 原始模块与版本 | 保留范围 | 本地修改 |
 | --- | --- | --- | --- |
 | `sing-vmess` | `github.com/sagernet/sing-vmess v0.2.8-0.20250909125414-3aed155119a1` | VMess、VLESS 及编译所需的同包辅助代码 | 同步用户表发布、VMess 旧版密钥刷新和关闭；握手读取不可变快照 |
-| `sing-shadowsocks` | `github.com/sagernet/sing-shadowsocks v0.2.8` | `shadowaead`、`shadowaead_2022` | 先构造完整用户表再发布；TCP、UDP 和 UDP 会话初始化使用同一快照 |
+| `sing-shadowsocks` | `github.com/sagernet/sing-shadowsocks v0.2.8` | `shadowaead`、`shadowaead_2022` | 先构造完整用户表再发布；TCP、UDP 和 UDP 会话初始化使用同一快照；SS2022 关闭不访问正在初始化的写入器 |
 | `sing-quic` | `github.com/sagernet/sing-quic v0.7.0-beta.4` | TUIC、Hysteria2 服务端及同包辅助代码 | 用户与密码在同一把锁下发布和读取，保留 QUIC 监听器与已有会话 |
 | `mieru` | `github.com/enfein/mieru/v3 v3.29.0` | `pkg/protocol` | 同步 Mux 与 UDP Underlay 的用户快照，TCP 已有连接保留原用户表；启动时向调用方返回监听失败 |
 
