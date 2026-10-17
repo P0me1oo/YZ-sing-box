@@ -77,6 +77,7 @@ func (l *Listener) ListenTCP() (net.Listener, error) {
 	if err != nil {
 		return nil, err
 	}
+	tcpListener = wrapProxyProtocolListener(l.ctx, tcpListener)
 	l.logger.Info("tcp server started at ", tcpListener.Addr())
 	l.tcpListener = tcpListener
 	return tcpListener, err
@@ -84,7 +85,6 @@ func (l *Listener) ListenTCP() (net.Listener, error) {
 
 func (l *Listener) loopTCPIn() {
 	tcpListener := l.tcpListener
-	var metadata adapter.InboundContext
 	for {
 		conn, err := tcpListener.Accept()
 		if err != nil {
@@ -100,12 +100,17 @@ func (l *Listener) loopTCPIn() {
 			l.logger.Error("tcp listener closed: ", err)
 			continue
 		}
-		//nolint:staticcheck
-		metadata.InboundDetour = l.listenOptions.Detour
-		metadata.Source = M.SocksaddrFromNet(conn.RemoteAddr()).Unwrap()
-		metadata.OriginDestination = M.SocksaddrFromNet(conn.LocalAddr()).Unwrap()
-		ctx := log.ContextWithNewID(l.ctx)
-		l.logger.InfoContext(ctx, "inbound connection from ", metadata.Source)
-		go l.connHandler.NewConnection(ctx, conn, metadata, nil)
+		go l.handleTCPConnection(conn)
 	}
+}
+
+func (l *Listener) handleTCPConnection(conn net.Conn) {
+	var metadata adapter.InboundContext
+	//nolint:staticcheck
+	metadata.InboundDetour = l.listenOptions.Detour
+	metadata.Source = M.SocksaddrFromNet(conn.RemoteAddr()).Unwrap()
+	metadata.OriginDestination = M.SocksaddrFromNet(conn.LocalAddr()).Unwrap()
+	ctx := log.ContextWithNewID(l.ctx)
+	l.logger.InfoContext(ctx, "inbound connection from ", metadata.Source)
+	l.connHandler.NewConnection(ctx, conn, metadata, nil)
 }

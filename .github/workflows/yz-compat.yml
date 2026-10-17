@@ -1,0 +1,119 @@
+name: YZ compatibility release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Fixed semantic release tag, for example v1.15.0'
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  BUILD_TAGS: with_quic with_utls with_wireguard with_gvisor with_acme with_clash_api
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.source.outputs.source_sha }}
+      version: ${{ steps.source.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.release_tag || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.1'
+          cache: true
+      - name: Verify fixed source
+        id: source
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          source_sha=$(git rev-parse HEAD)
+          [[ "$source_sha" == "$(git rev-parse "refs/tags/${RELEASE_TAG}^{commit}")" ]]
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+      - name: Test listener and retained compatibility patches
+        run: go test -mod=readonly -race -count=1 -timeout=5m -exec 'sudo -E' -tags "$BUILD_TAGS" ./common/listener ./route ./route/rule ./transport/v2raygrpclite ./third_party/sing-shadowsocks/shadowaead_2022
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.test.outputs.source_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.1'
+          cache: true
+      - name: Build and verify source
+        env:
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: '0'
+          VERSION: ${{ needs.test.outputs.version }}
+          SOURCE_SHA: ${{ needs.test.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          binary="$RUNNER_TEMP/sing-box-linux-$GOARCH"
+          go build -mod=readonly -trimpath -buildvcs=true -tags "$BUILD_TAGS" -ldflags "-s -w -X github.com/sagernet/sing-box/constant.Version=${VERSION#v}" -o "$binary" ./cmd/sing-box
+          go version -m "$binary" | tee "$binary.buildinfo.txt"
+          grep -Fq "vcs.revision=$SOURCE_SHA" "$binary.buildinfo.txt"
+          grep -Fq 'vcs.modified=false' "$binary.buildinfo.txt"
+          grep -Fq 'GOOS=linux' "$binary.buildinfo.txt"
+          grep -Fq "GOARCH=$GOARCH" "$binary.buildinfo.txt"
+          grep -Fq 'CGO_ENABLED=0' "$binary.buildinfo.txt"
+          if [[ "$GOARCH" == amd64 ]]; then
+            "$binary" version | grep -F "sing-box version ${VERSION#v}"
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sing-box-linux-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/sing-box-linux-${{ matrix.arch }}
+            ${{ runner.temp }}/sing-box-linux-${{ matrix.arch }}.buildinfo.txt
+          if-no-files-found: error
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum sing-box-linux-* > SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.test.outputs.version }}
+          name: YZ sing-box ${{ needs.test.outputs.version }}
+          make_latest: true
+          body: |
+            为使用通用 TCP 监听的入站增加可信 PROXY protocol v1/v2 接收，支持普通直连、名单热更新和实例隔离。
+
+            产品版本独立于官方基线：sing-box v1.14.0（0b8995879f29a9b98ee027bc17b75e101445b238）。来源提交：${{ needs.test.outputs.source_sha }}。
+
+            配套 Node v2.15.0，沿用“前置服务器 IP”名单。Realm 接收 PROXY 关闭、发送 PROXY v2 开启。原生 UDP、QUIC 和独立组件监听不在本次支持范围内。
+          files: dist/*
