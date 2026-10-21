@@ -68,7 +68,11 @@ SS2022 的读取器和写入器没有独立关闭资源，原 `common.Close` 会
 
 新增回归测试覆盖并发初始化与读取、初始化前关闭、并发及重复关闭、阻塞读取解除，以及 SS2022 首个普通或批量应答与关闭同时发生的情形。2026-09-08 使用 Go 1.26.4 在 Linux/amd64 验证，旧实现均复现数据竞争；修复后两个包各连续 10 轮 `-race` 通过，共 90 项测试及子测试执行，无数据竞争。最终远程固定依赖的完整 Node 并发验收与构建结果由 Node 兼容矩阵记录。
 
-## `v1.15.1` Vision TLS 指针修复（2026-10-22，发布准备）
+## `v1.15.1` Vision TLS 指针修复（2026-10-22）
+
+[Release v1.15.1](https://github.com/P0me1oo/YZ-sing-box/releases/tag/v1.15.1) 已发布，来源为 `560816cb3343a9081eff758d988c7fbef767f92b`。[兼容发布流程](https://github.com/P0me1oo/YZ-sing-box/actions/runs/39676739285) 的 Linux 竞态检查、amd64 和 arm64 构建均通过；两个程序的版本、架构、完整来源与 `vcs.modified=false` 已核对。5 份 Release 附件已匿名下载，4 项 SHA256SUMS 全部匹配，amd64 在本机 WSL 实际输出 `sing-box version 1.15.1`。Node 固定引用本版本后构建，服务器无需单独更新该核心。
+
+程序 SHA-256：amd64 为 `3c5452f1b8b7ac4032744a8fe3717f4ab46edd7589ed7f32993591eb83f8c195`，arm64 为 `c6a35807f3878ce95ef8d281daecb1219694fca769df46d4f136816339360cf9`。核验记录位于 `D:/codex-tmp/yz-release-panel-node-20261022-c05033a48076487a857e91002c76ec7b/core/verification.json`；发布后文档提交不移动正式标签。
 
 同步前来源为 `9dbebd69f3a7634b97d44a0948d86b3965cd6cb6`，官方基线仍为 `v1.14.0` / `0b8995879f29a9b98ee027bc17b75e101445b238`。Node `v2.24.1` 完整竞态回归发现，核心内置的 `third_party/sing-vmess/vless/vision.go:87` 同样将 TLS 对象指针经过 `uintptr` 转换，触发指针校验崩溃。Node 的外部模块替换无法改变核心内部副本，因此经用户明确授权修复核心。
 
