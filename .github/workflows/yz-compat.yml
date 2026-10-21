@@ -45,7 +45,7 @@ jobs:
           echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
           echo "version=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
       - name: Test listener and retained compatibility patches
-        run: go test -mod=readonly -race -count=1 -timeout=5m -exec 'sudo -E' -tags "$BUILD_TAGS" ./common/listener ./route ./route/rule ./transport/v2raygrpclite ./third_party/sing-shadowsocks/shadowaead_2022
+        run: go test -mod=readonly -race -count=1 -timeout=5m -exec 'sudo -E' -tags "$BUILD_TAGS" ./common/listener ./route ./route/rule ./transport/v2raygrpclite ./third_party/sing-shadowsocks/shadowaead_2022 ./third_party/sing-vmess/vless
 
   build:
     runs-on: ubuntu-latest
@@ -111,9 +111,9 @@ jobs:
           name: YZ sing-box ${{ needs.test.outputs.version }}
           make_latest: true
           body: |
-            为使用通用 TCP 监听的入站增加可信 PROXY protocol v1/v2 接收，支持普通直连、名单热更新和实例隔离。
+            修复 VLESS Vision 的 TLS 内部缓冲区指针还原错误，保留竞态与指针校验；同时保留已有用户热更新、路由热更新和可信 PROXY protocol 支持。
 
             产品版本独立于官方基线：sing-box v1.14.0（0b8995879f29a9b98ee027bc17b75e101445b238）。来源提交：${{ needs.test.outputs.source_sha }}。
 
-            配套 Node v2.15.0，沿用“前置服务器 IP”名单。Realm 接收 PROXY 关闭、发送 PROXY v2 开启。原生 UDP、QUIC 和独立组件监听不在本次支持范围内。
+            配套 Node v2.24.2。Node 固定引用本版本后构建即可，无需在服务器单独安装该核心。修复原因、影响范围和补丁删除条件见 docs/yz-compatibility.zh.md。
           files: dist/*

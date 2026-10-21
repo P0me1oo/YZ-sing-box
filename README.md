@@ -1,5 +1,7 @@
 # sing-box
 
+YZ 兼容版本 `v1.15.1`：固定官方 `v1.14.0` 基线，修复 VLESS Vision 的 TLS 指针校验崩溃，配套 Node `v2.24.2`。已有用户热更新、路由热更新和可信 PROXY 接收继续保留；来源、补丁范围和验证见 [兼容记录](docs/yz-compatibility.zh.md)。
+
 The universal proxy platform.
 
 [![Packaging status](https://repology.org/badge/vertical-allrepos/sing-box.svg)](https://repology.org/project/sing-box/versions)
