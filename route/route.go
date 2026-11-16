@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/dht"
 	"github.com/sagernet/sing-box/common/sniff"
 	C "github.com/sagernet/sing-box/constant"
 	"github.com/sagernet/sing-box/log"
@@ -33,6 +34,7 @@ var defaultPacketSniffers = []sniff.PacketSniffer{
 	sniff.DomainNameQuery,
 	sniff.QUICClientHello,
 	sniff.STUNMessage,
+	sniff.DHT,
 	sniff.UTP,
 	sniff.UDPTracker,
 	sniff.DTLSRecord,
@@ -244,6 +246,7 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 	}
 	// TODO: move to UoT
 	metadata.Network = N.NetworkUDP
+	guardMetadata := metadata
 
 	// Currently we don't have deadline usages for UDP connections
 	/*if deadline.NeedAdditionalReadDeadline(conn) {
@@ -259,9 +262,20 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 			r.rulesAccess.RUnlock()
 		}
 	}()
-	selectedRule, _, _, packetBuffers, err := r.matchRule(ctx, &metadata, nil, conn)
+	selectedRule, selectedIndex, _, packetBuffers, err := r.matchRule(ctx, &metadata, nil, conn)
 	if err != nil {
 		return err
+	}
+	if r.isDHTBlockRule(selectedRule, selectedIndex) && len(packetBuffers) > 0 && dht.IsMessage(packetBuffers[0].Buffer.Bytes()) {
+		// The guard will discard this datagram. Select the ordinary UDP path
+		// without reading/sniffing again so a DHT first packet cannot poison
+		// the whole XUDP session. All non-BT blocking rules still apply.
+		metadata = guardMetadata
+		selectedRule, _, _, _, err = r.matchRule(ctx, &metadata, nil, nil)
+		if err != nil {
+			N.ReleaseMultiPacketBuffer(packetBuffers)
+			return err
+		}
 	}
 	var selectedOutbound adapter.Outbound
 	var selectReturn bool
@@ -316,6 +330,9 @@ func (r *Router) routePacketConnection(ctx context.Context, conn N.PacketConn, m
 		conn = bufio.NewCachedPacketConn(conn, buffer.Buffer, buffer.Destination)
 		N.PutPacketBuffer(buffer)
 	}
+	if r.hasDHTBlockRule() {
+		conn = &dhtPacketConn{PacketConn: conn, router: r, ctx: ctx, metadata: guardMetadata}
+	}
 	if selectedRule != nil {
 		metadata.RouteRule = selectedRule.String()
 	}
@@ -342,6 +359,11 @@ func (r *Router) PreMatch(metadata adapter.InboundContext, firstPacket []byte) a
 	ctx := log.ContextWithNewID(r.ctx)
 	metadata.PreMatch = true
 	continueResult := adapter.PreMatchResult{Action: adapter.PreMatchContinue}
+	if metadata.Network == N.NetworkUDP && r.hasDHTBlockRule() {
+		// L3 direct flows would bypass per-datagram inspection after the first
+		// packet. Use the normal UDP connection path when a BT block is bound.
+		return continueResult
+	}
 	packetDestination := metadata.Destination
 	err := r.prepareMatchMetadata(ctx, &metadata)
 	if err != nil {
@@ -607,6 +629,13 @@ func (r *Router) prepareMatchMetadata(ctx context.Context, metadata *adapter.Inb
 func (r *Router) matchRule(
 	ctx context.Context, metadata *adapter.InboundContext,
 	inputConn net.Conn, inputPacketConn N.PacketConn,
+) (adapter.Rule, int, []*buf.Buffer, []*N.PacketBuffer, error) {
+	return r.matchRuleWithLogging(ctx, metadata, inputConn, inputPacketConn, true)
+}
+
+func (r *Router) matchRuleWithLogging(
+	ctx context.Context, metadata *adapter.InboundContext,
+	inputConn net.Conn, inputPacketConn N.PacketConn, logMatch bool,
 ) (
 	selectedRule adapter.Rule, selectedRuleIndex int,
 	buffers []*buf.Buffer, packetBuffers []*N.PacketBuffer, fatalErr error,
@@ -622,11 +651,12 @@ match:
 		if !currentRule.Match(metadata) {
 			continue
 		}
-		ruleDescription := currentRule.String()
-		if ruleDescription != "" {
-			r.logger.DebugContext(ctx, "match[", currentRuleIndex, "] ", currentRule, " => ", currentRule.Action())
-		} else {
-			r.logger.DebugContext(ctx, "match[", currentRuleIndex, "] => ", currentRule.Action())
+		if logMatch {
+			if ruleDescription := currentRule.String(); ruleDescription != "" {
+				r.logger.DebugContext(ctx, "match[", currentRuleIndex, "] ", currentRule, " => ", currentRule.Action())
+			} else {
+				r.logger.DebugContext(ctx, "match[", currentRuleIndex, "] => ", currentRule.Action())
+			}
 		}
 		var routeOptions *R.RuleActionRouteOptions
 		switch action := currentRule.Action().(type) {
@@ -683,6 +713,9 @@ match:
 		}
 		switch action := currentRule.Action().(type) {
 		case *R.RuleActionSniff:
+			if !logMatch && metadata.Protocol != "" {
+				continue
+			}
 			newBuffer, newPacketBuffers, newErr := r.actionSniff(ctx, metadata, action, inputConn, inputPacketConn, buffers, packetBuffers)
 			if newBuffer != nil {
 				buffers = append(buffers, newBuffer)

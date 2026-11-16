@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"sync/atomic"
 
 	"github.com/sagernet/sing-box/third_party/sing-vmess"
 	"github.com/sagernet/sing/common/auth"
@@ -111,7 +112,7 @@ func flowName(value string) string {
 
 type serverConn struct {
 	N.ExtendedConn
-	responseWritten bool
+	responseWritten atomic.Bool
 }
 
 func (c *serverConn) Read(b []byte) (n int, err error) {
@@ -119,7 +120,7 @@ func (c *serverConn) Read(b []byte) (n int, err error) {
 }
 
 func (c *serverConn) Write(b []byte) (n int, err error) {
-	if !c.responseWritten {
+	if !c.responseWritten.Load() {
 		buffer := buf.NewSize(2 + len(b))
 		buffer.WriteByte(Version)
 		buffer.WriteByte(0)
@@ -129,24 +130,24 @@ func (c *serverConn) Write(b []byte) (n int, err error) {
 		if err == nil {
 			n = len(b)
 		}
-		c.responseWritten = true
+		c.responseWritten.Store(true)
 		return
 	}
 	return c.ExtendedConn.Write(b)
 }
 
 func (c *serverConn) WriteBuffer(buffer *buf.Buffer) error {
-	if !c.responseWritten {
+	if !c.responseWritten.Load() {
 		header := buffer.ExtendHeader(2)
 		header[0] = Version
 		header[1] = 0
-		c.responseWritten = true
+		c.responseWritten.Store(true)
 	}
 	return c.ExtendedConn.WriteBuffer(buffer)
 }
 
 func (c *serverConn) FrontHeadroom() int {
-	if c.responseWritten {
+	if c.responseWritten.Load() {
 		return 0
 	}
 	return 2
@@ -157,7 +158,7 @@ func (c *serverConn) ReaderReplaceable() bool {
 }
 
 func (c *serverConn) WriterReplaceable() bool {
-	return c.responseWritten
+	return c.responseWritten.Load()
 }
 
 func (c *serverConn) NeedAdditionalReadDeadline() bool {

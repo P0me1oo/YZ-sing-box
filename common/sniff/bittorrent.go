@@ -1,13 +1,13 @@
 package sniff
 
 import (
-	"bytes"
 	"context"
 	"encoding/binary"
 	"io"
 	"os"
 
 	"github.com/sagernet/sing-box/adapter"
+	"github.com/sagernet/sing-box/common/dht"
 	C "github.com/sagernet/sing-box/constant"
 	E "github.com/sagernet/sing/common/exceptions"
 )
@@ -17,6 +17,15 @@ const (
 	trackerProtocolID     = 0x41727101980
 	trackerConnectMinSize = 16
 )
+
+// DHT recognizes complete KRPC datagrams as part of the existing BT protocol.
+func DHT(_ context.Context, metadata *adapter.InboundContext, packet []byte) error {
+	if !dht.IsMessage(packet) {
+		return os.ErrInvalid
+	}
+	metadata.Protocol = C.ProtocolBitTorrent
+	return nil
+}
 
 // BitTorrent detects if the stream is a BitTorrent connection.
 // For the BitTorrent protocol specification, see https://www.bittorrent.org/beps/bep_0003.html
@@ -53,39 +62,52 @@ func BitTorrent(_ context.Context, metadata *adapter.InboundContext, reader io.R
 // For the uTP protocol specification, see
 //  1. https://www.bittorrent.org/beps/bep_0029.html
 //  2. https://github.com/bittorrent/libutp/blob/2b364cbb0650bdab64a5de2abb4518f9f228ec44/utp_internal.cpp#L112
-func UTP(_ context.Context, metadata *adapter.InboundContext, packet []byte) error {
-	// A valid uTP packet must be at least 20 bytes long.
-	if len(packet) < 20 {
+func UTP(_ context.Context, metadata *adapter.InboundContext, b []byte) error {
+	if len(b) < 20 {
 		return os.ErrInvalid
 	}
 
-	version := packet[0] & 0x0F
-	ty := packet[0] >> 4
-	if version != 1 || ty > 4 {
+	// type 4 (ST_SYN), version 1
+	if b[0] != 0x41 {
 		return os.ErrInvalid
 	}
 
-	// Validate the extensions
-	extension := packet[1]
-	reader := bytes.NewReader(packet[20:])
+	// timestamp_difference is always 0 in new connections
+	if binary.BigEndian.Uint32(b[8:12]) != 0 {
+		return os.ErrInvalid
+	}
+
+	// Walk the extension chain. Selective ack (1) and extension bits (2)
+	extension, offset := b[1], 20
 	for extension != 0 {
-		err := binary.Read(reader, binary.BigEndian, &extension)
-		if err != nil {
-			return err
-		}
-		if extension > 0x04 {
+		if len(b) < offset+2 {
 			return os.ErrInvalid
 		}
-		var length byte
-		err = binary.Read(reader, binary.BigEndian, &length)
-		if err != nil {
-			return err
+		length := int(b[offset+1])
+		switch extension {
+		case 1: // selective ack
+			if length < 4 || length%4 != 0 {
+				return os.ErrInvalid
+			}
+		case 2: // extension bits: fixed 8 bytes, sent in ST_SYN by µTorrent
+			if length != 8 {
+				return os.ErrInvalid
+			}
+		default:
+			return os.ErrInvalid
 		}
-		_, err = reader.Seek(int64(length), io.SeekCurrent)
-		if err != nil {
-			return err
+		if len(b) < offset+2+length {
+			return os.ErrInvalid
 		}
+		extension = b[offset]
+		offset += 2 + length
 	}
+
+	// extensions should consume all ST_SYN payload
+	if len(b) != offset {
+		return os.ErrInvalid
+	}
+
 	metadata.Protocol = C.ProtocolBitTorrent
 	return nil
 }

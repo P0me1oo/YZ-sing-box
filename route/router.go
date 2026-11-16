@@ -30,6 +30,9 @@ type Router struct {
 	rulesAccess       sync.RWMutex
 	ruleSetAccess     sync.RWMutex
 	ruleOptions       []option.Rule
+	dhtRuleIndices    []int
+	dhtRuleNames      []string
+	dhtRuleFlags      []bool
 	ruleSetOptions    []option.RuleSet
 	closed            bool
 	ctx               context.Context
@@ -105,6 +108,7 @@ func (r *Router) Initialize(rules []option.Rule, ruleSets []option.RuleSet) erro
 	}
 	r.ruleOptions = rules
 	r.ruleSetOptions = ruleSets
+	r.prepareDHTRules()
 	return nil
 }
 

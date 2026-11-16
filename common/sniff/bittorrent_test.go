@@ -63,13 +63,20 @@ func TestSniffUTP(t *testing.T) {
 		"410277ef0b1fb1f60000000000040000c233000000080000000000000000",
 	}
 
-	for _, pkt := range packets {
+	for index, pkt := range packets {
 		pkt, err := hex.DecodeString(pkt)
 		require.NoError(t, err)
 		var metadata adapter.InboundContext
 		err = sniff.UTP(context.TODO(), &metadata, pkt)
-		require.NoError(t, err)
-		require.Equal(t, C.ProtocolBitTorrent, metadata.Protocol)
+		if index < 3 {
+			// Captured DATA/STATE packets are not sufficient to identify a new
+			// flow: their headers overlap ordinary protocols such as WireGuard.
+			require.Error(t, err)
+			require.Empty(t, metadata.Protocol)
+		} else {
+			require.NoError(t, err)
+			require.Equal(t, C.ProtocolBitTorrent, metadata.Protocol)
+		}
 	}
 }
 
@@ -106,5 +113,28 @@ func TestSniffNotUTP(t *testing.T) {
 		var metadata adapter.InboundContext
 		err = sniff.UTP(context.TODO(), &metadata, pkt)
 		require.Error(t, err)
+	}
+}
+
+func TestSniffUTPRejectsWireGuardAndTruncatedExtensions(t *testing.T) {
+	wireguard := make([]byte, 148)
+	wireguard[0] = 1
+	for i := 4; i < len(wireguard); i++ {
+		wireguard[i] = byte(i)
+	}
+	for _, tc := range []struct {
+		name   string
+		packet []byte
+	}{
+		{name: "WireGuard initiation", packet: wireguard},
+		{name: "missing extension", packet: append([]byte{0x41, 2}, make([]byte, 18)...)},
+		{name: "truncated extension", packet: append(append([]byte{0x41, 2}, make([]byte, 18)...), 0, 8, 0)},
+		{name: "SYN with trailing payload", packet: append(append([]byte{0x41, 0}, make([]byte, 18)...), 1)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var metadata adapter.InboundContext
+			require.Error(t, sniff.UTP(context.Background(), &metadata, tc.packet))
+			require.Empty(t, metadata.Protocol)
+		})
 	}
 }

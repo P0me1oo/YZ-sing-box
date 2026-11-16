@@ -112,6 +112,7 @@ func (r *Router) UpdateRules(rules []option.Rule, ruleSets []option.RuleSet) err
 	r.ruleSets, r.ruleSetMap = newRuleSets, newRuleSetMap
 	r.ruleSetAccess.Unlock()
 	r.ruleOptions, r.ruleSetOptions = rules, ruleSets
+	r.prepareDHTRules()
 	committed = true
 	if r.started && setsChanged {
 		if oldUpdater != nil {
