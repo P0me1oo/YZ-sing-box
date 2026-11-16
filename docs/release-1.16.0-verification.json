@@ -1,0 +1,85 @@
+{
+  "repo": "YZ-sing-box",
+  "version": "v1.16.0",
+  "source_commit": "ad0c0cfbc7c3827f3058aa666d9f1a3b0e0fd085",
+  "release_url": "https://github.com/P0me1oo/YZ-sing-box/releases/tag/v1.16.0",
+  "latest": true,
+  "assets": [
+    {
+      "repo": "YZ-sing-box",
+      "asset": "SHA256SUMS",
+      "bytes": 376,
+      "sha256": "1970a60698ac1bd44fe3d6d42668d2f0816b3bbac88bb95f86b73360a0639086",
+      "anonymous": true
+    },
+    {
+      "repo": "YZ-sing-box",
+      "asset": "sing-box-linux-amd64",
+      "bytes": 47444128,
+      "sha256": "ef3b94afb615814f0525f6f0b419dcff985f165f45b55ed1a49aa914ecf43984",
+      "anonymous": true
+    },
+    {
+      "repo": "YZ-sing-box",
+      "asset": "sing-box-linux-amd64.buildinfo.txt",
+      "bytes": 8508,
+      "sha256": "ec26da52e00381b2d7258c665d0c854ecbd6a4e2be8fd4646cfed2b91c64cea7",
+      "anonymous": true
+    },
+    {
+      "repo": "YZ-sing-box",
+      "asset": "sing-box-linux-arm64",
+      "bytes": 44105888,
+      "sha256": "545ea52c418e233d5e6ef0577ae47050a44b1a1e99d3e3c6ac52027d2da2d08d",
+      "anonymous": true
+    },
+    {
+      "repo": "YZ-sing-box",
+      "asset": "sing-box-linux-arm64.buildinfo.txt",
+      "bytes": 8510,
+      "sha256": "1bc8f9c55a06ce54c83d191649e0d2e951e45b7715ea3e2d92867cdbc306d426",
+      "anonymous": true
+    }
+  ],
+  "github_actions": [
+    {
+      "conclusion": "skipped",
+      "databaseId": 43831021269,
+      "event": "release",
+      "headSha": "ad0c0cfbc7c3827f3058aa666d9f1a3b0e0fd085",
+      "name": "Publish Docker Images",
+      "status": "completed"
+    },
+    {
+      "conclusion": "skipped",
+      "databaseId": 43831021201,
+      "event": "release",
+      "headSha": "ad0c0cfbc7c3827f3058aa666d9f1a3b0e0fd085",
+      "name": "Build Linux Packages",
+      "status": "completed"
+    },
+    {
+      "conclusion": "failure",
+      "databaseId": 43829991906,
+      "event": "push",
+      "headSha": "ad0c0cfbc7c3827f3058aa666d9f1a3b0e0fd085",
+      "name": "YZ compatibility release",
+      "status": "completed"
+    }
+  ],
+  "docker_published": false,
+  "actions_execution": [
+    {
+      "run_id": 43831021269,
+      "jobs": 3,
+      "executed_steps": 0,
+      "conclusion": "skipped"
+    },
+    {
+      "run_id": 43831021201,
+      "jobs": 3,
+      "executed_steps": 0,
+      "conclusion": "skipped"
+    }
+  ]
+}

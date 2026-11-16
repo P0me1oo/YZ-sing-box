@@ -1,5 +1,7 @@
 # YZboard-Node 兼容补丁
 
+当前发布 [v1.16.0](https://github.com/P0me1oo/YZ-sing-box/releases/tag/v1.16.0) 固定源码为 `ad0c0cfbc7c3827f3058aa666d9f1a3b0e0fd085`，安装包及构建来源见[发布核验](release-1.16.0.md)。
+
 ## v1.16.0 DHT 识别与逐报文拦截（2026-11-16）
 
 产品版本 `v1.16.0`，改动基于 `3c602031097cc8e5a690c3b57c7a37ee67caf6c7`。Agent v2.38.0 通过已发布固定版本消费本补丁；不把本地路径写入正式依赖。版本记录见 [CHANGELOG.md](../CHANGELOG.md)。
